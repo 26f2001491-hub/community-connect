@@ -34,7 +34,7 @@
 <body>
   <header>
     <div class="b"><span class="logo">🌐</span> Community Connect</div>
-    <a href="dashboard.html">← Dashboard</a>
+    <a href="index.html">← Dashboard</a>
   </header>
 
   <div class="wrap">
@@ -108,7 +108,7 @@
         });
         if (!res.ok) { const t = await res.text(); throw new Error(t); }
         setMsg("Event published ✓ redirecting…", true);
-        setTimeout(() => location.href = "dashboard.html", 1000);
+        setTimeout(() => location.href = "index.html", 1000);
       } catch (e) {
         setMsg("Couldn't publish — " + (e.message || "is backend running?"), false);
       }

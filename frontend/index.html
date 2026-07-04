@@ -280,7 +280,7 @@
 
     async function goChat(eventId) {
       const userId = localStorage.getItem("userId");
-      if (!userId) { location.href = "login.html?next=dashboard.html"; return; }
+      if (!userId) { location.href = "login.html?next=index.html"; return; }
       try {
         await fetch(`${API}/events/${eventId}/join`, {
           method: "POST", headers: { "Content-Type": "application/json" },

@@ -2,4 +2,4 @@
 __pycache__/
 *.pyc
 venv/
-dashboard_OLD.html
+index.html
