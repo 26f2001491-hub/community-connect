@@ -100,7 +100,7 @@
       location.href = "login.html?next=" + encodeURIComponent(here);
     }
 
-    const API = "http://localhost:8000";
+    const API = "https://community-connect-mt7r.onrender.com";
     const WS_BASE = API.replace(/^http/, "ws");
     const room = new URLSearchParams(location.search).get("room") || "general";
     const feed = document.getElementById("feed");
