@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Community Connect — Nearby Events</title>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0f1115; color: #e7e9ee; }
+    header { padding: 14px 18px; background: #171a21; border-bottom: 1px solid #262a33;
+             display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 16px; font-weight: 700; }
+    header .status { font-size: 12px; color: #9aa3b2; }
+    .wrap { display: grid; grid-template-columns: 340px 1fr; height: calc(100vh - 51px); }
+    #list { overflow-y: auto; border-right: 1px solid #262a33; }
+    .controls { padding: 14px; border-bottom: 1px solid #262a33; }
+    .controls label { font-size: 12px; color: #9aa3b2; display: block; margin-bottom: 6px; }
+    .controls input { width: 100%; padding: 8px; background: #0f1115; border: 1px solid #262a33;
+                      border-radius: 8px; color: #e7e9ee; font-size: 13px; }
+    .controls button { width: 100%; margin-top: 10px; padding: 9px; background: #3b82f6;
+                       border: none; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer; }
+    .card { padding: 14px; border-bottom: 1px solid #1c1f27; cursor: pointer; }
+    .card:hover { background: #171a21; }
+    .card .t { font-weight: 600; font-size: 14px; }
+    .card .m { font-size: 12px; color: #9aa3b2; margin-top: 4px; }
+    .badge { display: inline-block; font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
+             background: #1f2937; color: #93c5fd; padding: 2px 8px; border-radius: 999px; margin-top: 6px; }
+    #map { height: 100%; }
+    .empty { padding: 24px; color: #9aa3b2; font-size: 13px; text-align: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🗺️ Community Connect · Nearby Events</h1>
+    <span class="status" id="status">connecting…</span>
+  </header>
+  <div class="wrap">
+    <div id="list">
+      <div class="controls">
+        <label>Radius (metres)</label>
+        <input id="radius" type="number" value="5000" />
+        <button id="refresh">Refresh nearby</button>
+      </div>
+      <div id="cards"><div class="empty">Locating you…</div></div>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <script>
+    const API = "http://localhost:8000/api/v1";
+    let userLat = 28.6139, userLng = 77.2090; // Delhi fallback
+    let map, markers = [];
+
+    const statusEl = document.getElementById("status");
+    const cardsEl = document.getElementById("cards");
+
+    function initMap() {
+      map = new maplibregl.Map({
+        container: "map",
+        style: "https://tiles.openfreemap.org/styles/liberty",
+        center: [userLng, userLat],
+        zoom: 12,
+      });
+      new maplibregl.Marker({ color: "#22c55e" })
+        .setLngLat([userLng, userLat])
+        .setPopup(new maplibregl.Popup().setText("You are here"))
+        .addTo(map);
+    }
+
+    function clearMarkers() { markers.forEach(m => m.remove()); markers = []; }
+
+    async function loadNearby() {
+      const radius = document.getElementById("radius").value || 5000;
+      statusEl.textContent = "loading…";
+      try {
+        const res = await fetch(`${API}/events/nearby?lat=${userLat}&lng=${userLng}&radius=${radius}`);
+        const json = await res.json();
+        const events = json.data || [];
+        statusEl.textContent = `${events.length} events found`;
+        render(events);
+      } catch (e) {
+        statusEl.textContent = "backend not reachable";
+        cardsEl.innerHTML = `<div class="empty">Can't reach backend.<br/>Is <code>uvicorn</code> running on :8000?</div>`;
+      }
+    }
+
+    function render(events) {
+      clearMarkers();
+      if (!events.length) {
+        cardsEl.innerHTML = `<div class="empty">No events nearby yet.<br/>Create one via POST /api/v1/events 🙂</div>`;
+        return;
+      }
+      cardsEl.innerHTML = "";
+      events.forEach(ev => {
+        const km = ev.dist_m != null ? (ev.dist_m / 1000).toFixed(1) + " km" : "";
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `<div class="t">${ev.title}</div>
+          <div class="m">${new Date(ev.starts_at).toLocaleString()} · ${km}</div>
+          <span class="badge">${ev.category}</span>`;
+        card.onclick = () => map.flyTo({ center: [ev.lng, ev.lat], zoom: 15 });
+        cardsEl.appendChild(card);
+
+        const mk = new maplibregl.Marker({ color: "#3b82f6" })
+          .setLngLat([ev.lng, ev.lat])
+          .setPopup(new maplibregl.Popup().setHTML(`<b>${ev.title}</b><br/>${ev.category}`))
+          .addTo(map);
+        markers.push(mk);
+      });
+    }
+
+    navigator.geolocation?.getCurrentPosition(
+      pos => {
+        userLat = pos.coords.latitude; userLng = pos.coords.longitude;
+        initMap(); loadNearby();
+      },
+      () => { initMap(); loadNearby(); } // denied -> Delhi fallback
+    );
+
+    document.getElementById("refresh").onclick = loadNearby;
+  </script>
+</body>
+</html>

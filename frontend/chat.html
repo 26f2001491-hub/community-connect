@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Community Connect — Chat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0A0A0F;--surface:rgba(255,255,255,.04);--surface-2:rgba(255,255,255,.06);--border:rgba(255,255,255,.08);--text:#F4F4F7;--text-soft:#9A9AAE;--blue:#4F7CFF;--purple:#9B5CFF;--grad:linear-gradient(120deg,#4F7CFF,#9B5CFF 45%,#FF5CAF);}
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);}
+    body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(600px 400px at 15% 0%,rgba(79,124,255,.12),transparent 60%),radial-gradient(600px 400px at 85% 100%,rgba(255,92,175,.10),transparent 60%);}
+    h1{font-family:"Space Grotesk";}
+    .shell{max-width:760px;margin:0 auto;height:100vh;display:flex;flex-direction:column;}
+    header{background:rgba(10,10,15,.6);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;}
+    header .title{display:flex;align-items:center;gap:12px;}
+    header .logo{width:40px;height:40px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-size:18px;}
+    header h1{font-size:16px;font-weight:700;}
+    header .room{font-size:12px;font-weight:500;color:var(--text-soft);}
+    .dot{width:7px;height:7px;border-radius:50%;background:#f87171;display:inline-block;margin-right:5px;}
+    .dot.live{background:#4ade80;}
+    header a{color:var(--text-soft);font-weight:600;text-decoration:none;font-size:13px;}
+
+    #feed{flex:1;overflow-y:auto;padding:18px 16px;display:flex;flex-direction:column;gap:8px;}
+    #feed::-webkit-scrollbar{width:6px;}#feed::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+    .row{display:flex;gap:8px;align-items:flex-end;max-width:80%;}
+    .row.mine{align-self:flex-end;flex-direction:row-reverse;}
+    .row.theirs{align-self:flex-start;}
+    .avatar{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff;font-family:"Space Grotesk";}
+    .bubble{padding:9px 13px;border-radius:16px;font-size:14.5px;line-height:1.38;position:relative;word-break:break-word;}
+    .mine .bubble{background:var(--grad);color:#fff;border-bottom-right-radius:4px;}
+    .theirs .bubble{background:var(--surface-2);border:1px solid var(--border);border-bottom-left-radius:4px;}
+    .bubble .who{font-family:"Space Grotesk";font-size:11.5px;font-weight:600;margin-bottom:3px;opacity:.9;}
+    .mine .who{display:none;}
+    .bubble img{max-width:220px;border-radius:12px;margin-top:2px;display:block;cursor:pointer;}
+    .bubble .time{font-size:10px;opacity:.6;margin-top:3px;text-align:right;}
+    .system{align-self:center;color:var(--text-soft);font-size:12px;font-weight:500;background:var(--surface);padding:4px 14px;border-radius:999px;border:1px solid var(--border);}
+
+    .composer{display:flex;gap:8px;align-items:center;padding:12px 14px;background:rgba(10,10,15,.7);backdrop-filter:blur(16px);border-top:1px solid var(--border);position:relative;}
+    .icon-btn{width:42px;height:42px;flex:none;border:none;background:var(--surface-2);border:1px solid var(--border);border-radius:50%;color:var(--text);cursor:pointer;font-size:19px;display:grid;place-items:center;transition:background .15s;}
+    .icon-btn:hover{background:rgba(255,255,255,.1);}
+    .composer input[type=text]{flex:1;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:12px 18px;font:inherit;color:var(--text);outline:none;}
+    .composer input[type=text]:focus{border-color:var(--purple);}
+    .send-btn{border:none;background:var(--grad);color:#fff;font-weight:600;font-family:"Inter";border-radius:50%;width:46px;height:46px;flex:none;cursor:pointer;font-size:18px;display:grid;place-items:center;}
+
+    /* emoji picker */
+    .emoji-panel{position:absolute;bottom:74px;left:14px;background:#14141C;border:1px solid var(--border);border-radius:16px;padding:10px;display:none;grid-template-columns:repeat(8,1fr);gap:4px;width:320px;box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:10;}
+    .emoji-panel.open{display:grid;}
+    .emoji-panel span{font-size:22px;cursor:pointer;text-align:center;padding:4px;border-radius:8px;}
+    .emoji-panel span:hover{background:var(--surface-2);}
+
+    /* image preview before send */
+    .preview{position:absolute;bottom:74px;left:14px;right:14px;background:#14141C;border:1px solid var(--border);border-radius:16px;padding:12px;display:none;align-items:center;gap:12px;z-index:10;}
+    .preview.open{display:flex;}
+    .preview img{width:56px;height:56px;object-fit:cover;border-radius:10px;}
+    .preview .x{margin-left:auto;background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:50%;width:30px;height:30px;cursor:pointer;}
+
+    /* lightbox */
+    .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;place-items:center;z-index:50;cursor:zoom-out;}
+    .lightbox.open{display:grid;}
+    .lightbox img{max-width:90vw;max-height:90vh;border-radius:12px;}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="title">
+        <span class="logo">💬</span>
+        <div>
+          <h1>Event Chat</h1>
+          <div class="room"><span class="dot" id="dot"></span><span id="room-label">connecting…</span></div>
+        </div>
+      </div>
+      <a href="dashboard.html">← Back</a>
+    </header>
+
+    <div id="feed"></div>
+
+    <div class="composer">
+      <div class="emoji-panel" id="emojiPanel"></div>
+      <div class="preview" id="preview">
+        <img id="previewImg" alt="" />
+        <span style="color:var(--text-soft);font-size:13px;">Image ready to send</span>
+        <button class="x" id="previewX">✕</button>
+      </div>
+      <button class="icon-btn" id="emojiBtn" title="Emoji">😊</button>
+      <button class="icon-btn" id="attachBtn" title="Attach image">📎</button>
+      <input type="file" id="fileInput" accept="image/*" hidden />
+      <input type="text" id="input" placeholder="Type a message…" autocomplete="off" />
+      <button class="send-btn" id="send" title="Send">➤</button>
+    </div>
+  </div>
+
+  <div class="lightbox" id="lightbox"><img id="lightboxImg" alt="" /></div>
+
+  <script>
+    // ---- login check ----
+    if (!localStorage.getItem("userId")) {
+      const here = location.pathname.split("/").pop() + location.search;
+      location.href = "login.html?next=" + encodeURIComponent(here);
+    }
+
+    const API = "http://localhost:8000";
+    const WS_BASE = API.replace(/^http/, "ws");
+    const room = new URLSearchParams(location.search).get("room") || "general";
+    const feed = document.getElementById("feed");
+    const input = document.getElementById("input");
+    const dot = document.getElementById("dot");
+    let ws, pendingImage = null;
+
+    const uid = localStorage.getItem("userId") || "";
+    const myName = localStorage.getItem("cc_name") || ("User" + uid.slice(0, 4));
+
+    // rang avatar name se (consistent)
+    function colorFor(name) {
+      let h = 0; for (const c of name) h = c.charCodeAt(0) + ((h << 5) - h);
+      return `hsl(${h % 360} 65% 55%)`;
+    }
+    function initials(name) { return name.slice(0, 2).toUpperCase(); }
+
+    document.getElementById("room-label").textContent = room === "general" ? "Community · general" : "Event · " + room.slice(0, 8);
+    const fmt = ts => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    function addMsg(m) {
+      if (m.type === "system") {
+        const s = document.createElement("div");
+        s.className = "system"; s.textContent = m.text;
+        feed.appendChild(s); feed.scrollTop = feed.scrollHeight; return;
+      }
+      const mine = m.sender === myName;
+      const row = document.createElement("div");
+      row.className = "row " + (mine ? "mine" : "theirs");
+
+      const av = document.createElement("div");
+      av.className = "avatar"; av.style.background = colorFor(m.sender);
+      av.textContent = initials(m.sender);
+
+      const bub = document.createElement("div");
+      bub.className = "bubble";
+      let html = mine ? "" : `<div class="who">${m.sender}</div>`;
+      if (m.image) html += `<img src="${m.image}" class="chat-img" alt="image" />`;
+      if (m.text) html += `<div>${m.text.replace(/</g, "&lt;")}</div>`;
+      html += `<div class="time">${fmt(m.ts)}</div>`;
+      bub.innerHTML = html;
+
+      row.appendChild(av); row.appendChild(bub);
+      feed.appendChild(row); feed.scrollTop = feed.scrollHeight;
+
+      const img = bub.querySelector(".chat-img");
+      if (img) img.onclick = () => openLightbox(img.src);
+    }
+
+    function connect() {
+      ws = new WebSocket(`${WS_BASE}/ws/chat/${room}`);
+      ws.onopen = () => { dot.classList.add("live"); document.getElementById("room-label").textContent += " · live"; };
+      ws.onmessage = e => addMsg(JSON.parse(e.data));
+      ws.onclose = () => { dot.classList.remove("live"); setTimeout(connect, 2000); };
+    }
+
+    function sendMsg() {
+      const text = input.value.trim();
+      if ((!text && !pendingImage) || ws.readyState !== WebSocket.OPEN) return;
+      ws.send(JSON.stringify({ sender: myName, text, image: pendingImage }));
+      input.value = "";
+      clearPreview();
+    }
+    document.getElementById("send").onclick = sendMsg;
+    input.addEventListener("keydown", e => { if (e.key === "Enter") sendMsg(); });
+
+    // ---- emoji picker ----
+    const EMOJIS = "😀 😂 🤣 😊 😍 😎 🥳 😭 😅 🙌 👍 🙏 🔥 💯 🎉 ❤️ 💜 ✨ ☕ 🍕 ⚽ 🎬 🎵 🎸 🍻 👀 💪 🤝 😴 🤔 👋 🚀".split(" ");
+    const panel = document.getElementById("emojiPanel");
+    panel.innerHTML = EMOJIS.map(e => `<span>${e}</span>`).join("");
+    panel.querySelectorAll("span").forEach(s => s.onclick = () => { input.value += s.textContent; input.focus(); });
+    document.getElementById("emojiBtn").onclick = () => { panel.classList.toggle("open"); document.getElementById("preview").classList.remove("open"); };
+
+    // ---- image attach ----
+    const fileInput = document.getElementById("fileInput");
+    document.getElementById("attachBtn").onclick = () => fileInput.click();
+    fileInput.onchange = () => {
+      const f = fileInput.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        pendingImage = reader.result;                 // base64 data URL
+        document.getElementById("previewImg").src = pendingImage;
+        document.getElementById("preview").classList.add("open");
+        panel.classList.remove("open");
+      };
+      reader.readAsDataURL(f);
+    };
+    function clearPreview() {
+      pendingImage = null; fileInput.value = "";
+      document.getElementById("preview").classList.remove("open");
+    }
+    document.getElementById("previewX").onclick = clearPreview;
+
+    // ---- lightbox ----
+    const lb = document.getElementById("lightbox");
+    function openLightbox(src){ document.getElementById("lightboxImg").src = src; lb.classList.add("open"); }
+    lb.onclick = () => lb.classList.remove("open");
+
+    connect();
+  </script>
+</body>
+</html>

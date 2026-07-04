@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Community Connect</title>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0A0A0F; --bg-2: #12121A;
+      --surface: rgba(255,255,255,0.04); --surface-2: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.08);
+      --text: #F4F4F7; --text-soft: #9A9AAE; --text-dim: #63637A;
+      --blue: #4F7CFF; --purple: #9B5CFF; --pink: #FF5CAF;
+      --grad: linear-gradient(120deg, #4F7CFF 0%, #9B5CFF 45%, #FF5CAF 100%);
+      --grad-soft: linear-gradient(120deg, rgba(79,124,255,.15), rgba(155,92,255,.12), rgba(255,92,175,.10));
+      --r-lg: 24px; --r-pill: 999px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: "Inter", system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+    h1, h2, h3 { font-family: "Space Grotesk", sans-serif; letter-spacing: -0.02em; }
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: -1;
+      background:
+        radial-gradient(600px 400px at 15% 0%, rgba(79,124,255,.18), transparent 60%),
+        radial-gradient(700px 500px at 85% 10%, rgba(255,92,175,.14), transparent 60%),
+        radial-gradient(600px 600px at 50% 100%, rgba(155,92,255,.12), transparent 60%);
+    }
+    .gradient-text { background: var(--grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
+
+    nav {
+      display: flex; align-items: center; justify-content: space-between; padding: 20px 40px;
+      position: sticky; top: 0; z-index: 20; background: rgba(10,10,15,0.6); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-family: "Space Grotesk"; font-weight: 700; font-size: 20px; }
+    .brand .logo { width: 38px; height: 38px; border-radius: 11px; background: var(--grad); display: grid; place-items: center; font-size: 18px; box-shadow: 0 4px 20px rgba(155,92,255,.4); }
+    .nav-links { display: flex; gap: 30px; align-items: center; font-weight: 500; font-size: 15px; }
+    .nav-links a { text-decoration: none; color: var(--text-soft); transition: color .15s; }
+    .nav-links a:hover { color: var(--text); }
+    .btn { border: none; cursor: pointer; font-family: "Inter"; font-weight: 600; font-size: 15px; border-radius: var(--r-pill); padding: 12px 24px; transition: transform .14s ease, box-shadow .2s ease; color: #fff; }
+    .btn-grad { background: var(--grad); box-shadow: 0 6px 24px rgba(79,124,255,.35); }
+    .btn-grad:hover { transform: translateY(-2px); box-shadow: 0 10px 34px rgba(155,92,255,.5); }
+    .btn-ghost { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); }
+    .btn-ghost:hover { background: rgba(255,255,255,.1); transform: translateY(-2px); }
+
+    .hero { text-align: center; padding: 80px 24px 40px; }
+    .tag { display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--text-soft); background: var(--surface); border: 1px solid var(--border); padding: 8px 18px; border-radius: var(--r-pill); margin-bottom: 28px; }
+    .hero h1 { font-size: clamp(42px, 8vw, 88px); font-weight: 700; line-height: 0.98; }
+    .hero h1 .line2 { display: block; }
+    .hero p { max-width: 540px; margin: 24px auto 0; color: var(--text-soft); font-size: 18px; line-height: 1.5; }
+    .hero .cta-row { display: flex; gap: 14px; justify-content: center; margin-top: 36px; flex-wrap: wrap; }
+    .hero-stats { display: flex; justify-content: center; gap: 56px; margin-top: 60px; flex-wrap: wrap; }
+    .hstat .num { font-family: "Space Grotesk"; font-size: 40px; font-weight: 700; }
+    .hstat .lbl { color: var(--text-dim); font-size: 13px; font-weight: 500; margin-top: 4px; }
+
+    .grid { display: grid; grid-template-columns: 400px 1fr; gap: 20px; padding: 40px 40px 60px; max-width: 1400px; margin: 0 auto; }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; backdrop-filter: blur(10px); }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 22px 24px 14px; }
+    .panel-head h2 { font-size: 19px; font-weight: 600; }
+    .radius-chip { display: flex; align-items: center; gap: 6px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-pill); padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--text-soft); }
+    .radius-chip input { width: 60px; border: none; background: transparent; font: inherit; text-align: right; color: var(--blue); font-weight: 700; outline: none; }
+
+    #cards { max-height: 540px; overflow-y: auto; padding: 6px 14px 18px; }
+    #cards::-webkit-scrollbar { width: 6px; }
+    #cards::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .card { display: flex; gap: 14px; align-items: center; padding: 14px; margin: 8px 4px; border-radius: 18px; cursor: pointer; border: 1px solid transparent; transition: background .15s, border-color .15s, transform .15s; }
+    .card:hover { background: var(--surface-2); border-color: var(--border); transform: translateX(4px); }
+    .card.active { background: var(--surface-2); border-color: rgba(79,124,255,.5); }
+    .card .emoji { width: 52px; height: 52px; flex: none; border-radius: 15px; display: grid; place-items: center; font-size: 24px; background: var(--grad-soft); border: 1px solid var(--border); }
+    .card .t { font-family: "Space Grotesk"; font-weight: 600; font-size: 16px; }
+    .card .m { font-size: 13px; color: var(--text-soft); font-weight: 500; margin-top: 3px; }
+    .card .hint { font-size: 11px; color: var(--blue); font-weight: 600; margin-top: 4px; }
+    .card .foot { display: flex; align-items: center; gap: 8px; margin-top: 7px; }
+    .pill { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #cbb6ff; background: rgba(155,92,255,.14); border: 1px solid rgba(155,92,255,.25); border-radius: var(--r-pill); padding: 3px 10px; }
+    .join-btn { margin-left: auto; flex: none; border: none; background: var(--grad); color: #fff; font-family: "Inter"; font-weight: 600; border-radius: var(--r-pill); padding: 8px 18px; cursor: pointer; font-size: 13px; box-shadow: 0 4px 16px rgba(79,124,255,.3); transition: transform .14s; }
+    .join-btn:hover { transform: scale(1.05); }
+    .empty { padding: 44px 24px; text-align: center; color: var(--text-soft); font-weight: 500; }
+    .empty .big { font-size: 36px; margin-bottom: 10px; }
+
+    #map { height: 620px; filter: saturate(1.05); }
+    .map-panel { position: relative; }
+    .map-badge { position: absolute; z-index: 5; top: 16px; left: 16px; background: rgba(10,10,15,0.7); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: var(--r-pill); padding: 8px 16px; font-weight: 600; font-size: 13px; color: var(--text); }
+
+    .mission { max-width: 1400px; margin: 0 auto 40px; padding: 0 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+    .mission h2 { font-size: clamp(30px, 4vw, 46px); font-weight: 700; line-height: 1.05; }
+    .mission p { margin-top: 18px; font-size: 17px; font-weight: 400; color: var(--text-soft); line-height: 1.6; }
+    .mission .link { color: var(--blue); font-weight: 600; text-decoration: none; }
+    .mission-imgs { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px; height: 360px; }
+    .mission-imgs .tile { border-radius: 20px; background-size: cover; background-position: center; position: relative; overflow: hidden; border: 1px solid var(--border); }
+    .mission-imgs .tile.big { grid-row: span 2; }
+    .mission-imgs .cap { position: absolute; bottom: 12px; left: 12px; background: rgba(10,10,15,.72); backdrop-filter: blur(8px); color: #fff; font-family: "Space Grotesk"; font-weight: 600; font-size: 12px; padding: 5px 13px; border-radius: var(--r-pill); border: 1px solid var(--border); }
+
+    footer { border-top: 1px solid var(--border); padding: 48px 40px 30px; margin-top: 20px; background: var(--bg-2); }
+    .foot-grid { display: flex; flex-wrap: wrap; gap: 44px; justify-content: space-between; max-width: 1200px; margin: 0 auto; }
+    .foot-brand { max-width: 280px; }
+    .foot-brand .row { display: flex; align-items: center; gap: 12px; font-family: "Space Grotesk"; font-weight: 700; font-size: 19px; }
+    .foot-brand .logo { width: 34px; height: 34px; border-radius: 10px; background: var(--grad); display: grid; place-items: center; }
+    .foot-brand p { color: var(--text-dim); font-size: 14px; margin-top: 12px; line-height: 1.6; }
+    .foot-col h4 { font-family: "Space Grotesk"; font-size: 13px; margin-bottom: 14px; color: var(--text); }
+    .foot-col a { display: block; color: var(--text-dim); text-decoration: none; font-size: 14px; font-weight: 500; margin-bottom: 10px; transition: color .15s; }
+    .foot-col a:hover { color: var(--text); }
+    .foot-bottom { max-width: 1200px; margin: 32px auto 0; padding-top: 20px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; color: var(--text-dim); font-size: 13px; }
+
+    @media (max-width: 900px) {
+      nav { padding: 16px 20px; }
+      .nav-links a { display: none; }
+      .grid { grid-template-columns: 1fr; padding: 24px 16px 40px; }
+      #map { height: 400px; }
+      .mission { grid-template-columns: 1fr; padding: 0 20px; }
+      .mission-imgs { height: 280px; }
+      .hero-stats { gap: 32px; }
+      footer { padding: 36px 20px 24px; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="brand"><span class="logo">🌐</span> Community Connect</div>
+    <div class="nav-links">
+      <a href="map.html">Map</a>
+      <a href="chat.html">Chats</a>
+      <a href="#mission">How it works</a>
+      <button class="btn btn-grad" onclick="location.href='host.html'">Host an event →</button>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <span class="tag">Hyperlocal · Real-time · Community-first</span>
+    <h1><span class="gradient-text">Find Your People</span><span class="line2">Right Around You</span></h1>
+    <p>Discover events, meet new people, and turn your neighbourhood into a community — all in real-time.</p>
+    <div class="cta-row">
+      <button class="btn btn-grad" onclick="document.getElementById('explore').scrollIntoView()">Explore events →</button>
+      <button class="btn btn-ghost" onclick="location.href='host.html'">Host an event</button>
+    </div>
+    <div class="hero-stats">
+      <div class="hstat"><div class="num gradient-text" id="stat-events">–</div><div class="lbl">Events nearby</div></div>
+      <div class="hstat"><div class="num gradient-text" id="stat-nearest">–</div><div class="lbl">Nearest (km)</div></div>
+      <div class="hstat"><div class="num gradient-text" id="stat-cats">–</div><div class="lbl">Categories</div></div>
+    </div>
+  </section>
+
+  <div class="grid" id="explore">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Happening near you</h2>
+        <div class="radius-chip">📍 <input id="radius" type="number" value="50000" /> m</div>
+      </div>
+      <div id="cards"><div class="empty"><div class="big">📍</div>Locating you…</div></div>
+    </div>
+    <div class="panel map-panel">
+      <div class="map-badge" id="map-badge">Your neighbourhood</div>
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <section class="mission" id="mission">
+    <div>
+      <h2>Real life is <span class="gradient-text">better together.</span></h2>
+      <p>
+        Community Connect ka maqsad simple hai — screen se nikaal ke logon ko real duniya mein milvana.
+        Apne aas-paas ke events dhoondho, naye log milo, nayi jagahein explore karo. Kyunki asli
+        connections offline bante hain. <a class="link" href="#explore">Explore now &rarr;</a>
+      </p>
+    </div>
+    <div class="mission-imgs">
+      <div class="tile big" style="background-image:url('https://picsum.photos/seed/friends1/500/700')"><span class="cap">☕ Meetups</span></div>
+      <div class="tile" style="background-image:url('https://picsum.photos/seed/music2/400/350')"><span class="cap">🎵 Music</span></div>
+      <div class="tile" style="background-image:url('https://picsum.photos/seed/sport3/400/350')"><span class="cap">⚽ Sports</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <div class="row"><span class="logo">🌐</span> Community Connect</div>
+        <p>Hyperlocal events &amp; people near you. Meet fun folks, join events, and make your city feel smaller.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Product</h4>
+        <a href="map.html">Explore map</a>
+        <a href="chat.html">Community chat</a>
+        <a href="host.html">Host an event</a>
+      </div>
+      <div class="foot-col">
+        <h4>Company</h4>
+        <a href="#">About us</a>
+        <a href="#mission">How it works</a>
+        <a href="#">Careers</a>
+      </div>
+      <div class="foot-col">
+        <h4>Legal</h4>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Community Connect. All rights reserved.</span>
+      <span>Made with 💜 in Delhi, India</span>
+    </div>
+  </footer>
+
+  <script>
+    const API = "http://localhost:8000/api/v1";
+    const CAT_EMOJI = { party: "🎉", movie: "🎬", sport: "⚽", coffee: "☕", music: "🎵", other: "✨" };
+    let userLat = 28.6139, userLng = 77.2090;
+    let map, markers = [];
+    let selectedId = null;                 // kaunsa event abhi selected hai (route dikha hua)
+    const cardsEl = document.getElementById("cards");
+
+    function initMap() {
+      map = new maplibregl.Map({
+        container: "map",
+        style: "https://tiles.openfreemap.org/styles/dark",
+        center: [userLng, userLat], zoom: 11,
+      });
+      new maplibregl.Marker({ color: "#4F7CFF" })
+        .setLngLat([userLng, userLat])
+        .setPopup(new maplibregl.Popup().setText("You are here"))
+        .addTo(map);
+    }
+    function clearMarkers() { markers.forEach(m => m.remove()); markers = []; }
+    function setStats(events) {
+      document.getElementById("stat-events").textContent = events.length;
+      document.getElementById("stat-nearest").textContent = events.length ? (Math.min(...events.map(e => e.dist_m)) / 1000).toFixed(1) : "–";
+      document.getElementById("stat-cats").textContent = new Set(events.map(e => e.category)).size || "–";
+    }
+
+    // ---- Google-Maps style route: user -> event (OSRM, free, no key) ----
+    async function showRoute(ev, cardEl) {
+      selectedId = ev.id;
+      map.flyTo({ center: [ev.lng, ev.lat], zoom: 13 });
+
+      // highlight active card + button ko "Chat" bana do
+      document.querySelectorAll(".card").forEach(c => c.classList.remove("active"));
+      if (cardEl) {
+        cardEl.classList.add("active");
+        const btn = cardEl.querySelector(".join-btn");
+        if (btn) btn.textContent = "💬 Chat";
+        let hint = cardEl.querySelector(".hint");
+        if (!hint) { hint = document.createElement("div"); hint.className = "hint"; cardEl.querySelector("div[style]").appendChild(hint); }
+        hint.textContent = "Tap again to chat with host →";
+      }
+
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${ev.lng},${ev.lat}?overview=full&geometries=geojson`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const route = data.routes?.[0];
+        if (!route) return;
+
+        if (map.getLayer("route-line")) map.removeLayer("route-line");
+        if (map.getSource("route")) map.removeSource("route");
+
+        map.addSource("route", { type: "geojson", data: { type: "Feature", geometry: route.geometry } });
+        map.addLayer({
+          id: "route-line", type: "line", source: "route",
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: { "line-color": "#4F7CFF", "line-width": 5, "line-opacity": 0.9 },
+        });
+
+        // dono points screen me fit
+        const coords = route.geometry.coordinates;
+        const b = coords.reduce((bb, c) => bb.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0]));
+        map.fitBounds(b, { padding: 70, duration: 900 });
+
+        const dist = (route.distance / 1000).toFixed(1);
+        const mins = Math.round(route.duration / 60);
+        document.getElementById("map-badge").textContent = `🚗 ${dist} km · ~${mins} min to ${ev.title}`;
+      } catch {
+        document.getElementById("map-badge").textContent = ev.title;
+      }
+    }
+
+    async function goChat(eventId) {
+      const userId = localStorage.getItem("userId");
+      if (!userId) { location.href = "login.html?next=dashboard.html"; return; }
+      try {
+        await fetch(`${API}/events/${eventId}/join`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: userId }),
+        });
+      } catch {}
+      location.href = `chat.html?room=${eventId}`;   // host + joined log yahi room me
+    }
+
+    async function loadNearby() {
+      const radius = document.getElementById("radius").value || 50000;
+      try {
+        const res = await fetch(`${API}/events/nearby?lat=${userLat}&lng=${userLng}&radius=${radius}`);
+        const json = await res.json();
+        render(json.data || []);
+      } catch {
+        cardsEl.innerHTML = `<div class="empty"><div class="big">🔌</div>Can't reach the server.<br/>Start the backend, then refresh.</div>`;
+        setStats([]);
+      }
+    }
+
+    function render(events) {
+      clearMarkers();
+      setStats(events);
+      selectedId = null;
+      if (!events.length) {
+        cardsEl.innerHTML = `<div class="empty"><div class="big">🗓️</div>No events in this radius yet.<br/>Widen the radius or host the first one!</div>`;
+        return;
+      }
+      cardsEl.innerHTML = "";
+      events.forEach(ev => {
+        const km = (ev.dist_m / 1000).toFixed(1);
+        const when = new Date(ev.starts_at).toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="emoji">${CAT_EMOJI[ev.category] || "✨"}</div>
+          <div style="flex:1">
+            <div class="t">${ev.title}</div>
+            <div class="m">${when} · ${km} km · 👥 ${ev.rsvp_count ?? 0}</div>
+            <div class="foot"><span class="pill">${ev.category}</span></div>
+          </div>
+          <button class="join-btn" data-id="${ev.id}">Join</button>`;
+
+        // CARD click: pehli baar -> route dikhao, dusri baar -> chat
+        card.onclick = () => {
+          if (selectedId !== ev.id) showRoute(ev, card);
+          else goChat(ev.id);
+        };
+        // Join/Chat button: agar route dikh raha hai to chat, warna route
+        card.querySelector(".join-btn").onclick = (e) => {
+          e.stopPropagation();
+          if (selectedId === ev.id) goChat(ev.id);
+          else showRoute(ev, card);
+        };
+        cardsEl.appendChild(card);
+
+        const mk = new maplibregl.Marker({ color: "#9B5CFF" })
+          .setLngLat([ev.lng, ev.lat])
+          .setPopup(new maplibregl.Popup().setHTML(`<b>${ev.title}</b><br/>${km} km · ${ev.category}`))
+          .addTo(map);
+        mk.getElement().style.cursor = "pointer";
+        mk.getElement().addEventListener("click", () => showRoute(ev, card));
+        markers.push(mk);
+      });
+    }
+
+    navigator.geolocation?.getCurrentPosition(
+      pos => { userLat = pos.coords.latitude; userLng = pos.coords.longitude; initMap(); loadNearby(); },
+      () => { initMap(); loadNearby(); }
+    );
+    document.getElementById("radius").addEventListener("change", loadNearby);
+  </script>
+</body>
+</html>
