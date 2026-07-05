@@ -25,7 +25,7 @@ class User(Base):
     city:Mapped[str] = mapped_column(String(50), nullable = False)
     location: Mapped[str] = mapped_column(Geometry(geometry_type = "Point", srid = 4326), nullable = False)
     email: Mapped[str] = mapped_column(String(100), unique = True, nullable = False)
-    password: Mapped[str] = mapped_column(String(100),unique = True, nullable = False)
+    password: Mapped[str] = mapped_column(String(100),  nullable = False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default = datetime.utcnow)
     is_verified: Mapped[bool] = mapped_column(nullable = False, default = False)
     last_seen: Mapped[datetime] = mapped_column(DateTime, default = datetime.utcnow)
