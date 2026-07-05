@@ -10,6 +10,10 @@ from geoalchemy2.functions import ST_DWithin, ST_MakePoint, ST_SetSRID, ST_Dista
 
 from app.database import get_db
 from app.models.event import Event, EventStatus, EventCategory
+from sqlalchemy import delete as sa_delete
+from datetime import datetime, timezone
+
+# DELETE ek event
 
 router = APIRouter(prefix="/api/v1/events", tags=["events"])
 
@@ -71,3 +75,9 @@ async def create_event(body: EventCreate, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(ev)
     return {"success": True, "data": {"id": str(ev.id), "title": ev.title}}
+
+@router.delete("/{event_id}")
+async def delete_event(event_id: str, db: AsyncSession = Depends(get_db)):
+    await db.execute(sa_delete(Event).where(Event.id == event_id))
+    await db.commit()
+    return {"success": True, "message": "Deleted"}
